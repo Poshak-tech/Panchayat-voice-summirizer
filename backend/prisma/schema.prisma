@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  role      String    // "ADMIN", "SECRETARY", "OFFICER"
+  panchayat String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  meetings  Meeting[]
+}
+
+model Meeting {
+  id            String       @id @default(uuid())
+  title         String
+  description   String?
+  date          DateTime
+  panchayatName String
+  villageName   String
+  meetingType   String       // "Gram Sabha", "Ward Sabha", "Panchayat Samiti", "Special Meeting"
+  financialYear String       // e.g., "2026-2027"
+  agenda        String
+  participants  String       // JSON array of strings: '["Name 1", "Name 2"]'
+  audioPath     String?
+  status        String       // "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  creatorId     Int?
+  creator       User?        @relation(fields: [creatorId], references: [id])
+  transcript    Transcript?
+  summary       Summary?
+  actionItems   ActionItem[]
+}
+
+model Transcript {
+  id        String   @id @default(uuid())
+  meetingId String   @unique
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  segments  String   // JSON array of segments: '[{"start": 0, "end": 10, "speaker": "Speaker 1", "text": "..."}]'
+  createdAt DateTime @default(now())
+}
+
+model Summary {
+  id                  String   @id @default(uuid())
+  meetingId           String   @unique
+  meeting             Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  executiveSummary    String
+  keyDiscussionPoints String   // JSON array of strings
+  decisionsTaken      String   // JSON array of strings
+  schemesMentioned    String   // JSON array of strings/objects
+  budgetDiscussions   String   // JSON array of strings/objects
+  problemsRaised      String   // JSON array of strings
+  citizenRequests     String   // JSON array of strings
+  createdAt           DateTime @default(now())
+}
+
+model ActionItem {
+  id                 String    @id @default(uuid())
+  meetingId          String
+  meeting            Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  task               String
+  responsibleOfficer String
+  deadline           DateTime?
+  priority           String    // "HIGH", "MEDIUM", "LOW"
+  status             String    // "PENDING", "IN_PROGRESS", "COMPLETED"
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
